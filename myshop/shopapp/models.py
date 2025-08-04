@@ -22,7 +22,6 @@ class Category(models.Model):
 
     @property
     def level(self):
-        """Возвращает уровень вложенности категории"""
         level = 0
         parent = self.parent
         while parent:
@@ -68,12 +67,10 @@ class Cart(models.Model):
 
     @property
     def total_price(self):
-        """Общая стоимость корзины"""
         return sum(item.total_price for item in self.items.all())
 
     @property
     def total_items(self):
-        """Общее количество товаров в корзине"""
         return sum(item.quantity for item in self.items.all())
 
 
@@ -95,7 +92,6 @@ class CartItem(models.Model):
 
     @property
     def total_price(self):
-        """Общая стоимость элемента корзины"""
         return self.product.price * self.quantity
 
 

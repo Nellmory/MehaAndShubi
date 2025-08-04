@@ -12,7 +12,6 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'slug', 'description', 'parent', 'level', 'children', 'created_at']
     
     def get_children(self, obj):
-        """Получить дочерние категории"""
         children = Category.objects.filter(parent=obj)
         return CategorySerializer(children, many=True).data
 

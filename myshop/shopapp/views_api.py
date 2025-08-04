@@ -114,7 +114,7 @@ class OrderView(APIView):
                 quantity=item.quantity,
                 price=item.product.price
             )
-        cart.items.all().delete()  # Очищаем корзину
+        cart.items.all().delete()
         return Response(OrderSerializer(order).data)
 
     def get(self, request):
