@@ -1,7 +1,10 @@
 import hashlib
 import hmac
+import os
 import time
-from venv import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from django.contrib.auth import login
 from django.contrib.auth.models import User
@@ -68,32 +71,35 @@ def telegram_login_page(request):
 
 @csrf_exempt
 def telegram_auth_callback(request):
-    if request.method != 'POST':
+    # Поддержка как GET, так и POST запросов
+    if request.method == 'POST':
+        telegram_data = request.POST.dict()
+    elif request.method == 'GET':
+        telegram_data = request.GET.dict()
+    else:
         return JsonResponse({'error': 'Метод не поддерживается'}, status=405)
 
-    # Получаем данные из запроса
-    telegram_data = request.POST.dict()
     logger.info(f"Получены данные: {telegram_data}")
 
-    # Проверяем валидность данных
-    if not verify_telegram_data(telegram_data):
-        logger.error("Проверка подписи данных не пройдена")
-        return JsonResponse({'error': 'Неверные данные аутентификации'}, status=400)
+    # Проверка данных
+    if 'id' not in telegram_data:
+        logger.error("Отсутствует ID пользователя Telegram")
+        return JsonResponse({'error': 'Неполные данные аутентификации'}, status=400)
 
-    auth_date = int(telegram_data.get('auth_date', 0))
-    current_time = int(time.time())
-    if current_time - auth_date > 3600:  # 3600 секунд = 1 час
-        logger.error("Данные аутентификации устарели")
-        return JsonResponse({'error': 'Данные аутентификации устарели'}, status=400)
+    if not verify_telegram_data(telegram_data):
+        return JsonResponse({'error': 'Неверные данные аутентификации'}, status=400)
 
     try:
         user = get_or_create_user_from_telegram(telegram_data)
-
         login(request, user)
         logger.info(f"Пользователь {user.username} авторизован")
-
         refresh = RefreshToken.for_user(user)
 
+        # Для GET запросов выполняем перенаправление
+        if request.method == 'GET':
+            return redirect('/')
+
+        # Для POST запросов возвращаем JSON
         return JsonResponse({
             'success': True,
             'user': {
@@ -110,6 +116,11 @@ def telegram_auth_callback(request):
         })
     except Exception as e:
         logger.error(f"Ошибка при обработке запроса: {str(e)}")
+
+        # Для GET запросов перенаправляем на страницу с ошибкой
+        if request.method == 'GET':
+            return redirect('/telegram/login/?error=' + str(e))
+
         return JsonResponse({'error': str(e)}, status=500)
 
 
