@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+
+from .email_utils import send_registration_email
 from .serializers import UserSerializer
 
 
@@ -14,14 +16,14 @@ def register_user(request):
     if serializer.is_valid():
         username = serializer.validated_data['username']
         email = serializer.validated_data.get('email', '')
-        
+
         if User.objects.filter(username=username).exists():
-            return Response({'error': 'Пользователь с таким именем уже существует'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({'error': 'Пользователь с таким именем уже существует'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
         if email and User.objects.filter(email=email).exists():
-            return Response({'error': 'Пользователь с таким email уже существует'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Пользователь с таким email уже существует'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.create_user(
             username=username,
@@ -31,8 +33,11 @@ def register_user(request):
             last_name=serializer.validated_data.get('last_name', '')
         )
 
+        if email:
+            send_registration_email(user)
+
         refresh = RefreshToken.for_user(user)
-        
+
         return Response({
             'user': UserSerializer(user).data,
             'tokens': {
@@ -41,7 +46,7 @@ def register_user(request):
             },
             'message': 'Пользователь успешно зарегистрирован'
         }, status=status.HTTP_201_CREATED)
-    
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -50,19 +55,19 @@ def register_user(request):
 def login_user(request):
     username = request.data.get('username')
     password = request.data.get('password')
-    
+
     if not username or not password:
-        return Response({'error': 'Необходимо указать имя пользователя и пароль'}, 
+        return Response({'error': 'Необходимо указать имя пользователя и пароль'},
                        status=status.HTTP_400_BAD_REQUEST)
 
     user = authenticate(username=username, password=password)
-    
+
     if user is None:
-        return Response({'error': 'Неверное имя пользователя или пароль'}, 
+        return Response({'error': 'Неверное имя пользователя или пароль'},
                        status=status.HTTP_401_UNAUTHORIZED)
 
     refresh = RefreshToken.for_user(user)
-    
+
     return Response({
         'user': UserSerializer(user).data,
         'tokens': {
@@ -89,4 +94,4 @@ def logout_user(request):
             token.blacklist()
         return Response({'message': 'Успешный выход'})
     except Exception:
-        return Response({'error': 'Неверный токен'}, status=status.HTTP_400_BAD_REQUEST) 
+        return Response({'error': 'Неверный токен'}, status=status.HTTP_400_BAD_REQUEST)

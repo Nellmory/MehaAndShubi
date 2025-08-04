@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
+
+from .email_utils import send_order_confirmation_email
 from .models import Category, Product, Cart, CartItem, Order, OrderItem
 from .serializers import (
     CategorySerializer, ProductSerializer, CartSerializer, CartItemSerializer, CartItemCreateSerializer,
@@ -115,9 +117,13 @@ class OrderView(APIView):
                 price=item.product.price
             )
         cart.items.all().delete()
+
+        if request.user.email:
+            send_order_confirmation_email(order)
+
         return Response(OrderSerializer(order).data)
 
     def get(self, request):
         orders = Order.objects.filter(user=request.user)
         serializer = OrderSerializer(orders, many=True)
-        return Response(serializer.data) 
+        return Response(serializer.data)

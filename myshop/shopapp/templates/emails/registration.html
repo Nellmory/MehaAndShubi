@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f8f9fa; padding: 15px; text-align: center; }
+        .content { padding: 20px; }
+        .footer { text-align: center; font-size: 12px; color: #777; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Добро пожаловать в MehaAndShubi!</h1>
+        </div>
+        <div class="content">
+            <p>Здравствуйте, <strong>{{ user.first_name|default:user.username }}</strong>!</p>
+            <p>Спасибо за регистрацию в нашем интернет-магазине. Ваш аккаунт успешно создан.</p>
+            <p>Теперь вы можете:</p>
+            <ul>
+                <li>Просматривать каталог товаров</li>
+                <li>Добавлять товары в корзину</li>
+                <li>Оформлять заказы</li>
+                <li>Отслеживать статус заказов</li>
+            </ul>
+            <p>Если у вас возникнут вопросы, не стесняйтесь обращаться к нам.</p>
+        </div>
+        <div class="footer">
+            <p>С уважением, команда MehaAndShubi</p>
+            <p>&copy; 2025 MehaAndShubi. Все права защищены.</p>
+        </div>
+    </div>
+</body>
+</html>

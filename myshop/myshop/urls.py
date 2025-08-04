@@ -17,8 +17,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from shopapp.telegram_auth import telegram_login_page, telegram_auth_callback, telegram_test_login
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('shopapp.urls')),
     path('api/', include('shopapp.urls_api')),
+
+    path('telegram/login/', telegram_login_page, name='telegram_login'),
+    path('telegram/auth/', telegram_auth_callback, name='telegram_auth'),
+    path('telegram/test-login/', telegram_test_login, name='telegram_test_login'),
 ]
