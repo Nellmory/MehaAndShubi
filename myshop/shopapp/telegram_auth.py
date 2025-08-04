@@ -22,6 +22,7 @@ def verify_telegram_data(data):
     auth_data = data.copy()
     received_hash = auth_data.pop('hash')
 
+    # Создаем строку для проверки из всех полей
     data_check_arr = ['{}={}'.format(k, v) for k, v in sorted(auth_data.items())]
     data_check_string = '\n'.join(data_check_arr)
 
@@ -41,7 +42,9 @@ def get_or_create_user_from_telegram(telegram_data):
 
     try:
         user = User.objects.get(username=username)
+        logger.info(f"Найден существующий пользователь: {user.username}")
     except User.DoesNotExist:
+        logger.info(f"Создаем нового пользователя: {username}")
         user = User.objects.create_user(
             username=username,
             first_name=telegram_data.get('first_name', ''),
@@ -68,20 +71,26 @@ def telegram_auth_callback(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Метод не поддерживается'}, status=405)
 
+    # Получаем данные из запроса
     telegram_data = request.POST.dict()
+    logger.info(f"Получены данные: {telegram_data}")
 
+    # Проверяем валидность данных
     if not verify_telegram_data(telegram_data):
+        logger.error("Проверка подписи данных не пройдена")
         return JsonResponse({'error': 'Неверные данные аутентификации'}, status=400)
 
     auth_date = int(telegram_data.get('auth_date', 0))
     current_time = int(time.time())
-    if current_time - auth_date > 3600:
+    if current_time - auth_date > 3600:  # 3600 секунд = 1 час
+        logger.error("Данные аутентификации устарели")
         return JsonResponse({'error': 'Данные аутентификации устарели'}, status=400)
 
     try:
         user = get_or_create_user_from_telegram(telegram_data)
 
         login(request, user)
+        logger.info(f"Пользователь {user.username} авторизован")
 
         refresh = RefreshToken.for_user(user)
 
@@ -100,6 +109,7 @@ def telegram_auth_callback(request):
             }
         })
     except Exception as e:
+        logger.error(f"Ошибка при обработке запроса: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -107,7 +117,6 @@ def telegram_auth_callback(request):
 def telegram_test_login(request):
     if request.method == 'POST':
         try:
-            # Получаем данные из запроса
             telegram_id = request.POST.get('telegram_id', '12345678')
             first_name = request.POST.get('first_name', 'Тестовый')
             last_name = request.POST.get('last_name', 'Пользователь')
@@ -116,7 +125,6 @@ def telegram_test_login(request):
             logger.info(
                 f"Получены данные: ID={telegram_id}, имя={first_name}, фамилия={last_name}, username={username}")
 
-            # Создаем или получаем пользователя
             user_name = f"tg_{telegram_id}"
             try:
                 user = User.objects.get(username=user_name)
@@ -132,11 +140,9 @@ def telegram_test_login(request):
                     user.email = f"{username}@telegram.com"
                     user.save()
 
-            # Авторизуем пользователя
             login(request, user)
             logger.info(f"Пользователь {user.username} авторизован")
 
-            # Создаем JWT токены
             refresh = RefreshToken.for_user(user)
 
             return JsonResponse({
