@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Главная страница{% endblock %}</title>
+</head>
+<body>
+    <header>
+        <h1>Мой интернет-магазин</h1>
+    </header>
+
+    <div class="content">
+        {% block content %}
+        {% for product in products %}
+            <p>{{ product }}</p>
+        {% endfor %}
+    {% endblock %}
+    </div>
+
+    <footer>
+        <p>Все права защищены</p>
+    </footer>
+</body>
+</html>
