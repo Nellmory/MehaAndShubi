@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234567
+      POSTGRES_DB: mehaandshubi_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    env_file: .env
+    build: .
+    container_name: backend
+    restart: always
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
