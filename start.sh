@@ -1,17 +1,15 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
-# Ожидание базы данных (убедитесь, что postgresql-client установлен)
-until pg_isready -h db -p 5432 -U postgres; do
+# Ожидание базы данных
+until pg_isready -h "$HOST" -p 5432 -U "$USER"; do
   echo "Waiting for database..."
   sleep 2
 done
 
-python /app/myshop/manage.py migrate
-python /app/myshop/manage.py collectstatic --noinput
+cd myshop
 
-# Запуск Gunicorn
-exec gunicorn myshop.wsgi:application \
-    --bind 0.0.0.0:$PORT \
-    --workers 4 \
-    --timeout 120
+python manage.py migrate
+python manage.py collectstatic --noinput
+
+exec gunicorn myshop.wsgi:application --bind 0.0.0.0:$PORT
